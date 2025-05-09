@@ -2,24 +2,32 @@ version: '3'
 
 services:
   reverse-proxy:
-    # The official v3 Traefik docker image
     image: traefik:v3.3
-    # Enables the web UI and tells Traefik to listen to docker
     command: --api.insecure=true --providers.docker
     ports:
-      # The HTTP port
       - "80:80"
-      # The Web UI (enabled by --api.insecure=true)
       - "8080:8080"
     volumes:
-      # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - web
   
   api-produits:
     image: api-produits
     labels:
       - "traefik.http.routers.api-produits.rule=Host(`produits.fermesoccitane.fr`)"
+      - "traefik.http.services.api-produits.loadbalancer.server.port=3000"
+    networks:
+      - web
+
   api-origine:
     image: api-origine
     labels:
       - "traefik.http.routers.api-origine.rule=Host(`origine.fermesoccitane.fr`)"
+      - "traefik.http.services.api-origine.loadbalancer.server.port=8000"
+    networks:
+      - web
+
+networks:
+  web:
+    external: false
